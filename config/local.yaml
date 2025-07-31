@@ -12,6 +12,8 @@ http_server:
   idle_timeout: 30s
 kafka:
   brokers:
-    - "localhost:9092"
+    - "localhost:9021"
+    - "localhost:9022"
+    - "localhost:9023"
   topic: "orders-topic"
   group_id: "ordes-group"
