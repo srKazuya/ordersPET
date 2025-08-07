@@ -13,7 +13,7 @@ import (
 
 	"github.com/srKazuya/ordersPET/internal/config"
 	saver "github.com/srKazuya/ordersPET/internal/service/saver"
-	
+
 	"github.com/srKazuya/ordersPET/internal/http-server/handlers/get"
 	"github.com/srKazuya/ordersPET/internal/http-server/handlers/save"
 	nwLogger "github.com/srKazuya/ordersPET/internal/http-server/middleware/nwLogger"
@@ -21,7 +21,6 @@ import (
 
 	"github.com/srKazuya/ordersPET/internal/lib/logger/sl"
 	"github.com/srKazuya/ordersPET/internal/storage/postgres"
-
 )
 
 const (
@@ -77,9 +76,6 @@ func main() {
 		c.Start(log)
 	}()
 
-
-
-
 	// sigCh := make(chan os.Signal, 1)
 	// signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 	// <-sigCh
@@ -92,11 +88,13 @@ func main() {
 	router.Use(middleware.Recoverer)
 	router.Use(middleware.URLFormat)
 
+	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "./static/index.html")
+	})
+	
 	router.Post("/save", save.New(log, p, cfg.Kafka.Topic))
 	router.Get("/orders/{order_uid}", get.New(log, storage))
-	
 
-	
 	srv := &http.Server{
 		Addr:         cfg.Address,
 		Handler:      router,
@@ -105,7 +103,6 @@ func main() {
 		IdleTimeout:  cfg.HTTPServer.IdleTimeout,
 	}
 
-	
 	go func() {
 		log.Info("starting HTTP server", slog.String("address", cfg.Address))
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -113,7 +110,6 @@ func main() {
 			os.Exit(1)
 		}
 	}()
-
 
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
@@ -125,7 +121,6 @@ func main() {
 	// if err := srv.Shutdown(nil); err != nil {
 	// 	log.Error("error during server shutdown", sl.Err(err))
 	// }
-
 
 }
 
