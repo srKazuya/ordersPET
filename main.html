@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+            background-color: #f2f2f2;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        textarea, input, button {
+            width: 100%;
+            margin-top: 10px;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+
+        .result-box {
+            margin-top: 15px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            background: #fafafa;
+            border-radius: 5px;
+        }
+
+        .row {
+            display: flex;
+            flex-direction: row;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .col {
+            flex: 1;
+        }
+
+        .inline-info {
+            font-size: 13px;
+            color: gray;
+        }
+
+        ul {
+            margin-top: 5px;
+            margin-bottom: 10px;
+        }
+
+        li {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Управление заказами</h1>
+        <h2>Сохранить заказ</h2>
+        <textarea id="jsonInput" placeholder="Вставьте JSON заказа сюда"></textarea>
+        <button onclick="sendOrder()">Сохранить</button>
+        <p id="saveMsg"></p>
+
+        <h2>Получить заказ</h2>
+        <div class="row">
+            <div class="col">
+                <input type="text" id="orderIdInput" placeholder="Введите OrderUID">
+            </div>
+            <div class="col" style="flex: 0 0 auto;">
+                <button onclick="fetchOrder()">Получить</button>
+            </div>
+        </div>
+        <div class="row">
+            <span id="loadTime" class="inline-info"></span>
+            <span id="firstTime" class="inline-info" style="color: blue;"></span>
+        </div>
+
+        <div id="orderOutput" class="result-box"></div>
+    </div>
+
+    <script>
+        const BASE_URL = "http://127.0.0.1:8082";
+        let firstTime = null;
+
+        function sendOrder() {
+            let raw = document.getElementById("jsonInput").value;
+
+            fetch(BASE_URL + "/save", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: raw
+            })
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById("saveMsg").innerText = "Ответ сервера: " + JSON.stringify(data);
+            })
+            .catch(err => {
+                document.getElementById("saveMsg").innerText = "Ошибка: " + err.message;
+            });
+        }
+
+        function fetchOrder() {
+            let id = document.getElementById("orderIdInput").value;
+            let start = performance.now();
+
+            fetch(BASE_URL + "/orders/" + id)
+            .then(res => res.json())
+            .then(data => {
+                let end = performance.now();
+                let time = (end - start).toFixed(1);
+                document.getElementById("loadTime").innerText = "Время запроса: " + time + " мс";
+
+                if (firstTime === null) {
+                    firstTime = time;
+                    document.getElementById("firstTime").innerText = "Время первого запроса: " + firstTime + " мс";
+                }
+
+                let box = document.getElementById("orderOutput");
+
+                if (data.status === "OK" && data.Order) {
+                    let o = data.Order;
+                    let html = `
+                        <strong>Заказ:</strong> ${o.order_uid}<br>
+                        <strong>Трек-номер:</strong> ${o.track_number}<br>
+                        <strong>Точка входа:</strong> ${o.entry}<br>
+                        <hr>
+                        <strong>Доставка:</strong>
+                        <ul>
+                            <li>Имя: ${o.delivery.name}</li>
+                            <li>Телефон: ${o.delivery.phone}</li>
+                            <li>Город: ${o.delivery.city}</li>
+                            <li>Адрес: ${o.delivery.address}</li>
+                            <li>Email: ${o.delivery.email}</li>
+                        </ul>
+                        <strong>Оплата:</strong>
+                        <ul>
+                            <li>Транзакция: ${o.payment.transaction}</li>
+                            <li>Сумма: ${o.payment.amount}</li>
+                            <li>Валюта: ${o.payment.currency}</li>
+                        </ul>
+                        <strong>Товары:</strong>
+                        <ul>
+                    `;
+
+                    for (let i = 0; i < o.items.length; i++) {
+                        let item = o.items[i];
+                        html += `
+                            <li>
+                                <strong>${item.name}</strong> — ${item.price} (${item.brand})
+                            </li>
+                        `;
+                    }
+
+                    html += `</ul>`;
+
+                    box.innerHTML = html;
+                } else {
+                    box.innerHTML = "<span style='color:red;'>Ошибка: заказ не найден или произошёл сбой</span>";
+                }
+            })
+            .catch(err => {
+                document.getElementById("orderOutput").innerHTML = "Ошибка запроса: " + err.message;
+            });
+        }
+    </script>
+</body>
+</html>

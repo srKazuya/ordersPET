@@ -25,11 +25,11 @@ func NewProducer(log *slog.Logger, address []string) (*Producer, error) {
 		slog.String("op", op),
 	)
 
-	conf := &kafka.ConfigMap{
+	cfg := &kafka.ConfigMap{
 		"bootstrap.servers": strings.Join(address, ","),
 	}
 
-	p, err := kafka.NewProducer(conf)
+	p, err := kafka.NewProducer(cfg)
 	if err != nil {
 		log.Error("failed to create new producer", sl.Err(err))
 		return nil, fmt.Errorf("%s error with new Producer: %w", op, err)

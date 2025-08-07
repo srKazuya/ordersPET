@@ -15,5 +15,7 @@ kafka:
     - "localhost:9021"
     - "localhost:9022"
     - "localhost:9023"
+  security_protocol: "plaintext"
   topic: "orders-topic"
   group_id: "ordes-group"
+  consumerGroup: "order-consumer-group"

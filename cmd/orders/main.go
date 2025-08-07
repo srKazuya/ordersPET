@@ -3,18 +3,25 @@ package main
 import (
 	"fmt"
 	"log/slog"
+	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 
 	"github.com/srKazuya/ordersPET/internal/config"
-
+	saver "github.com/srKazuya/ordersPET/internal/service/saver"
+	
+	"github.com/srKazuya/ordersPET/internal/http-server/handlers/get"
 	"github.com/srKazuya/ordersPET/internal/http-server/handlers/save"
 	nwLogger "github.com/srKazuya/ordersPET/internal/http-server/middleware/nwLogger"
 	kafka "github.com/srKazuya/ordersPET/internal/kafka"
+
 	"github.com/srKazuya/ordersPET/internal/lib/logger/sl"
 	"github.com/srKazuya/ordersPET/internal/storage/postgres"
+
 )
 
 const (
@@ -26,6 +33,7 @@ const (
 var address []string
 
 func main() {
+	fmt.Println("loaded config OK")
 	cfg := config.MustLoad()
 
 	log := setupLogger(cfg.Env)
@@ -48,6 +56,7 @@ func main() {
 	storage, err := postgres.New(pgConfig)
 	if err != nil {
 		log.Error("failed to init stroage", sl.Err(err))
+		os.Exit(1)
 	}
 	_ = storage
 
@@ -59,12 +68,23 @@ func main() {
 		log.Error("failed to init producer", sl.Err(err))
 	}
 
-	// for i := 0; i < 100; i++ {
-	// 	msg := fmt.Sprintf("ASdasda %d", i)
-	// 	if err = p.Produce(msg, cfg.Kafka.Topic); err != nil {
-	// 		log.Error("asdas")
-	// 	}
-	// }
+	saver := saver.New(log, storage)
+	c, err := kafka.NewConsumer(saver, log, address, cfg.Topic, cfg.ConsumerGroup)
+	if err != nil {
+		log.Error("failed to conusme", sl.Err(err))
+	}
+	go func() {
+		c.Start(log)
+	}()
+
+
+
+
+	// sigCh := make(chan os.Signal, 1)
+	// signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+	// <-sigCh
+	// c.Stop()
+
 	router := chi.NewRouter()
 
 	router.Use(middleware.RequestID)
@@ -73,10 +93,40 @@ func main() {
 	router.Use(middleware.URLFormat)
 
 	router.Post("/save", save.New(log, p, cfg.Kafka.Topic))
+	router.Get("/orders/{order_uid}", get.New(log, storage))
+	
 
-	//route
+	
+	srv := &http.Server{
+		Addr:         cfg.Address,
+		Handler:      router,
+		ReadTimeout:  cfg.HTTPServer.Timeout,
+		WriteTimeout: cfg.HTTPServer.Timeout,
+		IdleTimeout:  cfg.HTTPServer.IdleTimeout,
+	}
 
-	//server
+	
+	go func() {
+		log.Info("starting HTTP server", slog.String("address", cfg.Address))
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Error("failed to start server", sl.Err(err))
+			os.Exit(1)
+		}
+	}()
+
+
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+	<-sigCh
+
+	log.Info("shutting down server...")
+
+	c.Stop()
+	// if err := srv.Shutdown(nil); err != nil {
+	// 	log.Error("error during server shutdown", sl.Err(err))
+	// }
+
+
 }
 
 func setupLogger(env string) *slog.Logger {

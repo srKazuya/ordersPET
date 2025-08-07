@@ -34,20 +34,18 @@ type Kafka struct {
 	Brokers []string `yaml:"brokers"`
 	Topic   string   `yaml:"topic"`
 	GroupID string   `yaml:"group_id"`
+	ConsumerGroup string `yaml:"consumerGroup"`
 }
 
 func MustLoad() *Config {
 	configPath := os.Getenv("CONFIG_PATH")
 	if configPath == "" {
-		log.Fatal("CONGIF_PATH is not ser")
+		log.Fatal("CONFIGH_PATH is not set")
 	}
-
 	if _, err := os.Stat(configPath); err != nil {
 		log.Fatalf("err while oppening config file %s", err)
 	}
-
 	var cfg Config
-
 	err := cleanenv.ReadConfig(configPath, &cfg)
 	if err != nil {
 		log.Fatalf("err while reading config, %s", err)

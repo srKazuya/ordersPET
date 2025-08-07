@@ -25,7 +25,7 @@ type Request struct {
 	Payment           PaymentRequest  `json:"payment" validate:"required,dive"`
 	Items             []ItemRequest   `json:"items" validate:"required,min=1,dive"`
 	Locale            string          `json:"locale" validate:"required,alpha"`
-	InternalSignature string          `json:"internal_signature" validate:"required"`
+	InternalSignature string          `json:"internal_signature"`
 	CustomerID        string          `json:"customer_id" validate:"required"`
 	DeliveryService   string          `json:"delivery_service" validate:"required"`
 	ShardKey          string          `json:"shardkey" validate:"required"`
@@ -46,7 +46,7 @@ type DeliveryRequest struct {
 
 type PaymentRequest struct {
 	Transaction  string `json:"transaction" validate:"required"`
-	RequestID    string `json:"request_id" validate:"required"`
+	RequestID    string `json:"request_id"`
 	Currency     string `json:"currency" validate:"required,len=3"`
 	Provider     string `json:"provider" validate:"required"`
 	Amount       int    `json:"amount" validate:"required,gt=0"`
@@ -54,7 +54,7 @@ type PaymentRequest struct {
 	Bank         string `json:"bank" validate:"required"`
 	DeliveryCost int    `json:"delivery_cost" validate:"required"`
 	GoodsTotal   int    `json:"goods_total" validate:"required"`
-	CustomFee    int    `json:"custom_fee" validate:"required"`
+	CustomFee    int    `json:"custom_fee"`
 }
 
 type ItemRequest struct {
@@ -80,6 +80,10 @@ func New(log *slog.Logger, prod *kafka.Producer, topic string) http.HandlerFunc 
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.order.Save"
 
+		log = log.With(
+			slog.String("op", op),
+
+		)
 		var req Request
 
 		err := render.DecodeJSON(r.Body, &req)
@@ -117,13 +121,12 @@ func New(log *slog.Logger, prod *kafka.Producer, topic string) http.HandlerFunc 
 		err = prod.Produce(string(msgBytes), topic)
 		if err != nil {
 			log.Error("failed to produse order", sl.Err(err))
-			render.JSON(w, r, resp.Error("failde to save transaction"))
+			render.JSON(w, r, resp.Error("failde to produse order"))
 			return
 		}
 
 		log.Info("order added", slog.String("trackNumber: ", req.TrackNumber))
 		responseOK(w, r, req.TrackNumber)
-
 	}
 }
 
