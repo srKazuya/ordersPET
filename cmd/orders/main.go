@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -54,23 +55,43 @@ func main() {
 	}
 
 	storage, err := postgres.New(pgConfig)
-	if err != nil {
-		log.Error("failed to init stroage", sl.Err(err))
+	switch {
+	case errors.Is(err, postgres.ErrOpenDB):
+		log.Error("failed to connect to DB", sl.Err(err))
+		os.Exit(1)
+	case errors.Is(err, postgres.ErrMigration):
+		log.Error("migartion failed", sl.Err(err))
+		os.Exit(1)
+	case err != nil:
+		log.Error("unexpected error", sl.Err(err))
 		os.Exit(1)
 	}
 
 	for _, ad := range cfg.Kafka.Brokers {
 		address = append(address, ad)
 	}
+
 	p, err := kafka.NewProducer(log, address)
-	if err != nil {
-		log.Error("failed to init producer", sl.Err(err))
+	switch {
+	case errors.Is(err, kafka.ErrCreateProducer):
+		log.Error("failed to create producer", sl.Err(err))
+	case errors.Is(err, kafka.ErrUnknownType):
+		log.Error("iknown kafka error")
 	}
 
 	saver := saver.New(log, storage)
+
 	c, err := kafka.NewConsumer(saver, log, address, cfg.Topic, cfg.ConsumerGroup)
 	if err != nil {
-		log.Error("failed to conusme", sl.Err(err))
+		switch {
+		case errors.Is(err, kafka.ErrCreateConsumer):
+			log.Error("failed to create Kafka consumer", sl.Err(err))
+		case errors.Is(err, kafka.ErrSubscribeTopic):
+			log.Error("failed to subscribe to Kafka topic", sl.Err(err))
+		default:
+			log.Error("uknokwn kafka consumer error", sl.Err(err))
+		}
+		return
 	}
 	go func() {
 		c.Start(log)

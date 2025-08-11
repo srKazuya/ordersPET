@@ -3,11 +3,17 @@ package postgres
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 
 	_ "github.com/lib/pq"
 	"github.com/pressly/goose/v3"
 	"github.com/srKazuya/ordersPET/internal/storage"
+)
+
+var (
+	ErrOpenDB    = errors.New("failed to open database")
+	ErrMigration = errors.New("failed to run migrations")
 )
 
 type Storage struct {
@@ -19,11 +25,11 @@ func New(cfg Config) (*Storage, error) {
 
 	db, err := sql.Open("postgres", cfg.DSN)
 	if err != nil {
-		return nil, fmt.Errorf("%s:%w", op, err)
+		return nil, fmt.Errorf("%s: %w: %w", op, ErrOpenDB, err)
 	}
 
 	if err := goose.Up(db, "internal/storage/postgres/migrations"); err != nil {
-		return nil, fmt.Errorf("%s migrate:%w", op, err)
+		return nil, fmt.Errorf("%s: %w: %w", op, ErrMigration, err)
 	}
 
 	return &Storage{db: db}, nil

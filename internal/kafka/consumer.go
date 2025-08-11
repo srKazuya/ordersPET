@@ -1,12 +1,21 @@
 package kafka
 
 import (
+	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
 
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/srKazuya/ordersPET/internal/lib/logger/sl"
+)
+
+var (
+	ErrCreateConsumer = errors.New("failed to create Kafka consumer")
+	ErrSubscribeTopic = errors.New("failed to subscribe on Kafka topic")
+	ErrReadMessage    = errors.New("failed to read Kafka message")
+	ErrSaveOrder      = errors.New("failed to save order")
+	ErrSaveOffset     = errors.New("failed to store offset")
 )
 
 const (
@@ -44,13 +53,14 @@ func NewConsumer(saver OrderSaver, log *slog.Logger, address []string, topic, co
 	c, err := kafka.NewConsumer(cfg)
 	if err != nil {
 		log.Error("failed to create new consumer", sl.Err(err))
-		return nil, fmt.Errorf("%s error with new Consumer: %w", op, err)
+		return nil, fmt.Errorf("%s: %w: %v", op, ErrCreateConsumer, err)
 	}
 
 	if err = c.Subscribe(topic, nil); err != nil {
 		log.Error("failed to subscribe on topic", sl.Err(err))
-		return nil, fmt.Errorf("%s failed to subscribe on topic: %s with new Consumer: %w", op, topic, err)
+		return nil, fmt.Errorf("%s: %w: topic=%s: %v", op, ErrSubscribeTopic, topic, err)
 	}
+
 	return &Consumer{
 		consumer: c,
 		Service:  saver,
@@ -62,19 +72,27 @@ func (c *Consumer) Start(log *slog.Logger) {
 		if c.stop {
 			break
 		}
+
 		kafkaMsg, err := c.consumer.ReadMessage(noTimeout)
 		if err != nil {
-			log.Error("failed to read msg", sl.Err(err))
+			log.Error("read message error", sl.Err(err))
+			err = fmt.Errorf("%w: %v", ErrReadMessage, err)
+			continue
 		}
+
 		if kafkaMsg == nil {
 			continue
 		}
+
 		if err := c.Service.SaveOrder(kafkaMsg.Value, &kafkaMsg.TopicPartition.Offset); err != nil {
-			log.Error("failed to save order", sl.Err(err))
+			log.Error("save order error", sl.Err(err))
+			err = fmt.Errorf("%w: %v", ErrSaveOrder, err)
 			continue
 		}
+
 		if _, err = c.consumer.StoreMessage(kafkaMsg); err != nil {
-			log.Error("failed to save offset", sl.Err(err))
+			log.Error("save offset error", sl.Err(err))
+			err = fmt.Errorf("%w: %v", ErrSaveOffset, err)
 			continue
 		}
 	}
@@ -83,7 +101,7 @@ func (c *Consumer) Start(log *slog.Logger) {
 func (c *Consumer) Stop() error {
 	c.stop = true
 	if _, err := c.consumer.Commit(); err != nil {
-		return err
+		return fmt.Errorf("commit error: %w", err)
 	}
 	return c.consumer.Close()
 }

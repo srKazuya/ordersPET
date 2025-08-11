@@ -9,15 +9,15 @@ require (
 	github.com/pressly/goose/v3 v3.24.3
 )
 
-require github.com/rs/cors v1.11.1 // indirect
+require gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 
 require (
 	github.com/BurntSushi/toml v1.5.0 // indirect
 	github.com/ajg/form v1.5.1 // indirect
-	github.com/go-chi/render v1.0.3 // indirect
+	github.com/go-chi/render v1.0.3
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
-	github.com/go-playground/validator v9.31.0+incompatible // indirect
+	github.com/go-playground/validator v9.31.0+incompatible
 	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
