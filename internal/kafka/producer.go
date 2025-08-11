@@ -62,7 +62,7 @@ func (p *Producer) Produce(message, topic string) error {
 	}
 }
 
-func (p *Producer) Close(){
+func (p *Producer) Close() {
 	p.producer.Flush(flushTimeout)
 	p.producer.Close()
 }

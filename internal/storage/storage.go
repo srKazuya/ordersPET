@@ -5,20 +5,20 @@ import (
 )
 
 type Order struct {
-	OrderUID          string          `json:"order_uid" validate:"required,alphanum"`
-	TrackNumber       string          `json:"track_number" validate:"required"`
-	Entry             string          `json:"entry" validate:"required"`
-	Delivery          Delivery `json:"delivery" validate:"required,dive"`
-	Payment           Payment  `json:"payment" validate:"required,dive"`
-	Items             []Item   `json:"items" validate:"required,min=1,dive"`
-	Locale            string          `json:"locale" validate:"required,alpha"`
-	InternalSignature string          `json:"internal_signature"`
-	CustomerID        string          `json:"customer_id" validate:"required"`
-	DeliveryService   string          `json:"delivery_service" validate:"required"`
-	ShardKey          string          `json:"shardkey" validate:"required"`
-	SmID              int             `json:"sm_id" validate:"required"`
-	DateCreated       time.Time       `json:"date_created" validate:"required"`
-	OofShard          string          `json:"oof_shard" validate:"required"`
+	OrderUID          string    `json:"order_uid" validate:"required,alphanum"`
+	TrackNumber       string    `json:"track_number" validate:"required"`
+	Entry             string    `json:"entry" validate:"required"`
+	Delivery          Delivery  `json:"delivery" validate:"required,dive"`
+	Payment           Payment   `json:"payment" validate:"required,dive"`
+	Items             []Item    `json:"items" validate:"required,min=1,dive"`
+	Locale            string    `json:"locale" validate:"required,alpha"`
+	InternalSignature string    `json:"internal_signature"`
+	CustomerID        string    `json:"customer_id" validate:"required"`
+	DeliveryService   string    `json:"delivery_service" validate:"required"`
+	ShardKey          string    `json:"shardkey" validate:"required"`
+	SmID              int       `json:"sm_id" validate:"required"`
+	DateCreated       time.Time `json:"date_created" validate:"required"`
+	OofShard          string    `json:"oof_shard" validate:"required"`
 }
 
 type Delivery struct {
@@ -57,5 +57,3 @@ type Item struct {
 	Brand       string `json:"brand" validate:"required"`
 	Status      int    `json:"status" validate:"required"`
 }
-
-

@@ -82,7 +82,6 @@ func New(log *slog.Logger, prod *kafka.Producer, topic string) http.HandlerFunc 
 
 		log = log.With(
 			slog.String("op", op),
-
 		)
 		var req Request
 

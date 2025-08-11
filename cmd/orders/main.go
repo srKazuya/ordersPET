@@ -12,8 +12,8 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 
 	"github.com/srKazuya/ordersPET/internal/config"
-	saver "github.com/srKazuya/ordersPET/internal/service/saver"
 	getter "github.com/srKazuya/ordersPET/internal/service/getter"
+	saver "github.com/srKazuya/ordersPET/internal/service/saver"
 
 	"github.com/srKazuya/ordersPET/internal/http-server/handlers/get"
 	"github.com/srKazuya/ordersPET/internal/http-server/handlers/save"
@@ -59,7 +59,6 @@ func main() {
 		os.Exit(1)
 	}
 
-
 	for _, ad := range cfg.Kafka.Brokers {
 		address = append(address, ad)
 	}
@@ -88,7 +87,7 @@ func main() {
 	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "./static/index.html")
 	})
-	
+
 	router.Post("/save", save.New(log, p, cfg.Kafka.Topic))
 	router.Get("/orders/{order_uid}", get.New(log, getter))
 

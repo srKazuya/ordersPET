@@ -4,10 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"time"
 	"sync"
+	"time"
 
-	
 	"github.com/srKazuya/ordersPET/internal/lib/logger/sl"
 	"github.com/srKazuya/ordersPET/internal/storage"
 )
@@ -15,7 +14,7 @@ import (
 type Getter struct {
 	log     *slog.Logger
 	storage OrderGetter
-	
+
 	cache struct {
 		sync.RWMutex
 		data map[string]*storage.Order
@@ -24,7 +23,6 @@ type Getter struct {
 
 type OrderGetter interface {
 	GetOrderByUID(ctx context.Context, orderUID string) (storage.Order, error)
-	
 }
 
 func New(log *slog.Logger, getter OrderGetter) *Getter {
@@ -39,7 +37,7 @@ func New(log *slog.Logger, getter OrderGetter) *Getter {
 func (g *Getter) GetOrderByUID(ctx context.Context, orderUID string) (storage.Order, error) {
 	const op = "orderGetter.GetOrderByUID"
 	fmt.Println("GetOrderByUID вызван")
-	
+
 	g.cache.RLock()
 	order, found := g.cache.data[orderUID]
 	g.cache.RUnlock()
@@ -67,4 +65,3 @@ func (g *Getter) GetOrderByUID(ctx context.Context, orderUID string) (storage.Or
 
 	return orderVal, nil
 }
-

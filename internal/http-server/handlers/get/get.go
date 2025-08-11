@@ -10,15 +10,13 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
 
-
-	"github.com/srKazuya/ordersPET/internal/service/getter"
+	orderGetter "github.com/srKazuya/ordersPET/internal/service/getter"
 	"github.com/srKazuya/ordersPET/internal/storage"
 
 	"github.com/srKazuya/ordersPET/internal/lib/logger/sl"
 
 	resp "github.com/srKazuya/ordersPET/internal/lib/validators"
 )
-
 
 type DeliveryRequest struct {
 	Name    string `json:"name" validate:"required"`
@@ -89,7 +87,7 @@ func New(log *slog.Logger, getter orderGetter.OrderGetter) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 		orderUID := chi.URLParam(r, "order_uid")
-		
+
 		order, err := getter.GetOrderByUID(ctx, orderUID)
 		if err != nil {
 			log.Error("failed to get order", sl.Err(err))
