@@ -32,7 +32,7 @@ func New(log *slog.Logger, saver OrderSaver) *Saver {
 func (s *Saver) SaveOrder(msg []byte, offset *kafka.Offset) error {
 	const op = "orderSaver.GetOrder"
 
-
+	
 	var order storage.Order
 	if err := json.Unmarshal(msg, &order); err != nil {
 		s.log.Error("failed to unmarshal kafka msg", sl.Err(err))

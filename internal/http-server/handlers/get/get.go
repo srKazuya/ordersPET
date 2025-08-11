@@ -3,17 +3,15 @@ package get
 import (
 	"context"
 
-	// "errors"
-	// "io"
 	"log/slog"
 	"net/http"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
-	// "github.com/go-playground/validator"
 
-	orderGetter "github.com/srKazuya/ordersPET/internal/service/getter"
+
+	"github.com/srKazuya/ordersPET/internal/service/getter"
 	"github.com/srKazuya/ordersPET/internal/storage"
 
 	"github.com/srKazuya/ordersPET/internal/lib/logger/sl"
@@ -21,9 +19,6 @@ import (
 	resp "github.com/srKazuya/ordersPET/internal/lib/validators"
 )
 
-// type Request struct {
-// 	OrderUID string `json:"order_uid" validate:"required,alphanum"`
-// }
 
 type DeliveryRequest struct {
 	Name    string `json:"name" validate:"required"`
@@ -90,38 +85,12 @@ func New(log *slog.Logger, getter orderGetter.OrderGetter) http.HandlerFunc {
 		log = log.With(
 			slog.String("op", op),
 		)
-		// var req Request
-
-		// err := render.DecodeJSON(r.Body, &req)
-		// if errors.Is(err, io.EOF) {
-		// 	log.Error("request BODY is empty")
-
-		// 	render.JSON(w, r, resp.Error("empty request"))
-		// 	return
-		// }
-
-		// if err != nil {
-		// 	log.Error("failed todecode request body", sl.Err(err))
-		// 	render.JSON(w, r, resp.Error("failed to decode request body"))
-		// 	return
-		// }
-
-		// log.Info("request body decoded")
-
-		// if err := validator.New().Struct(req); err != nil {
-		// 	validateErr := err.(validator.ValidationErrors)
-
-		// 	log.Error("invaild request", sl.Err(err))
-
-		// 	render.JSON(w, r, resp.ValidationError(validateErr))
-		// 	return
-		// }
 
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 		orderUID := chi.URLParam(r, "order_uid")
 		
-		order, err := getter.GetOrderByID(ctx, orderUID)
+		order, err := getter.GetOrderByUID(ctx, orderUID)
 		if err != nil {
 			log.Error("failed to get order", sl.Err(err))
 			render.JSON(w, r, resp.Error("failde to get order"))

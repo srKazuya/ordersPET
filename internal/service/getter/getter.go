@@ -23,7 +23,8 @@ type Getter struct {
 }
 
 type OrderGetter interface {
-	GetOrderByID(ctx context.Context, orderUID string) (storage.Order, error)
+	GetOrderByUID(ctx context.Context, orderUID string) (storage.Order, error)
+	
 }
 
 func New(log *slog.Logger, getter OrderGetter) *Getter {
@@ -37,7 +38,8 @@ func New(log *slog.Logger, getter OrderGetter) *Getter {
 
 func (g *Getter) GetOrderByUID(ctx context.Context, orderUID string) (storage.Order, error) {
 	const op = "orderGetter.GetOrderByUID"
-
+	fmt.Println("GetOrderByUID вызван")
+	
 	g.cache.RLock()
 	order, found := g.cache.data[orderUID]
 	g.cache.RUnlock()
@@ -49,7 +51,7 @@ func (g *Getter) GetOrderByUID(ctx context.Context, orderUID string) (storage.Or
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
-	orderVal, err := g.storage.GetOrderByID(ctx, orderUID)
+	orderVal, err := g.storage.GetOrderByUID(ctx, orderUID)
 	if err != nil {
 		g.log.Error("failed to get order", sl.Err(err))
 		return storage.Order{}, fmt.Errorf("%s: failed to get order: %w", op, err)

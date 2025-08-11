@@ -105,7 +105,7 @@ func (s *Storage) SaveOrder(ctx context.Context, order *storage.Order) error {
 	return nil
 }
 
-func (s *Storage) GetOrderByID(ctx context.Context, orderUID string) (storage.Order, error) {
+func (s *Storage) GetOrderByUID(ctx context.Context, orderUID string) (storage.Order, error) {
 	const op = "storage.postgres.GetOrderByID"
 
 	order := &storage.Order{}

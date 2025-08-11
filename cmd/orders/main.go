@@ -13,6 +13,7 @@ import (
 
 	"github.com/srKazuya/ordersPET/internal/config"
 	saver "github.com/srKazuya/ordersPET/internal/service/saver"
+	getter "github.com/srKazuya/ordersPET/internal/service/getter"
 
 	"github.com/srKazuya/ordersPET/internal/http-server/handlers/get"
 	"github.com/srKazuya/ordersPET/internal/http-server/handlers/save"
@@ -57,7 +58,7 @@ func main() {
 		log.Error("failed to init stroage", sl.Err(err))
 		os.Exit(1)
 	}
-	_ = storage
+
 
 	for _, ad := range cfg.Kafka.Brokers {
 		address = append(address, ad)
@@ -76,11 +77,7 @@ func main() {
 		c.Start(log)
 	}()
 
-	// sigCh := make(chan os.Signal, 1)
-	// signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
-	// <-sigCh
-	// c.Stop()
-
+	getter := getter.New(log, storage)
 	router := chi.NewRouter()
 
 	router.Use(middleware.RequestID)
@@ -93,7 +90,7 @@ func main() {
 	})
 	
 	router.Post("/save", save.New(log, p, cfg.Kafka.Topic))
-	router.Get("/orders/{order_uid}", get.New(log, storage))
+	router.Get("/orders/{order_uid}", get.New(log, getter))
 
 	srv := &http.Server{
 		Addr:         cfg.Address,
@@ -118,10 +115,6 @@ func main() {
 	log.Info("shutting down server...")
 
 	c.Stop()
-	// if err := srv.Shutdown(nil); err != nil {
-	// 	log.Error("error during server shutdown", sl.Err(err))
-	// }
-
 }
 
 func setupLogger(env string) *slog.Logger {

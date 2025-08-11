@@ -36,7 +36,7 @@ func NewConsumer(saver OrderSaver, log *slog.Logger, address []string, topic, co
 		"group.id":                 consumerGroup,
 		"session.timeout.ms":       sessionTimeout,
 		"enable.auto.offset.store": false,
-		"enable.auto.commit":       true,
+		"enable.auto.commit":       true,	
 		"auto.commit.interval.ms":  5000,
 		"auto.offset.reset": "earliest",
 	}
